@@ -2264,16 +2264,19 @@ static uint32_t macho_swap32(uint32_t x)
 #define tbd_parse_trample *pos++=0
 
 #ifdef TCC_IS_NATIVE
+#include <TargetConditionals.h>
 #include <malloc/malloc.h>
 
 /* Looks for the active developer SDK set by xcode-select (or the default
    one set during installation.) */
 ST_FUNC void tcc_add_macos_sdkpath(TCCState* s)
 {
+#if TARGET_OS_OSX
     char *sdkroot = NULL, *pos = NULL;
     void* xcs = dlopen("libxcselect.dylib", RTLD_GLOBAL | RTLD_LAZY);
     CString path;
-    int (*f)(unsigned int, char**) = dlsym(xcs, "xcselect_host_sdk_path");
+    int (*f)(unsigned int, char**) =
+        xcs ? dlsym(xcs, "xcselect_host_sdk_path") : NULL;
     cstr_new(&path);
     if (f) f(1, &sdkroot);
     if (sdkroot)
@@ -2290,6 +2293,7 @@ ST_FUNC void tcc_add_macos_sdkpath(TCCState* s)
             ":" "/Applications/Xcode.app/Developer/SDKs/MacOSX.sdk/usr/lib"
             );
     cstr_free(&path);
+#endif
 }
 
 ST_FUNC char* macho_tbd_soname(int fd) {
