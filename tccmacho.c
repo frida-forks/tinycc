@@ -2264,6 +2264,8 @@ static uint32_t macho_swap32(uint32_t x)
 #define tbd_parse_trample *pos++=0
 
 #ifdef TCC_IS_NATIVE
+#include <malloc/malloc.h>
+
 /* Looks for the active developer SDK set by xcode-select (or the default
    one set during installation.) */
 ST_FUNC void tcc_add_macos_sdkpath(TCCState* s)
@@ -2278,11 +2280,8 @@ ST_FUNC void tcc_add_macos_sdkpath(TCCState* s)
         pos = strstr(sdkroot,"SDKs/MacOSX");
     if (pos)
         cstr_printf(&path, "%.*s.sdk/usr/lib", (int)(pos - sdkroot + 11), sdkroot);
-    /* must use free from libc directly */
-#pragma push_macro("free")
-#undef free
-    free(sdkroot);
-#pragma pop_macro("free")
+    if (sdkroot)
+        malloc_zone_free(malloc_zone_from_ptr(sdkroot), sdkroot);
     if (path.size)
         tcc_add_library_path(s, (char*)path.data);
     else
